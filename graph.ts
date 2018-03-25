@@ -2,11 +2,16 @@
 Graph
 -----
 new(ctx, wcell:number)
+Rect():Rect
+Clear(pi:number)
 Plot(x,y:number, pi:number)
-DrawCell(x,y:number, cell:number[][])
+DrawFrame(x,y:number, frame:Frame)
+DrawSprite(sp:Sprite)
+DrawText(x:number, y:number, s:string, fi:number, pi:number)
 
 */
 
+import {Pos, Rect, Frame} from "./common";
 import {Sprite} from "./sprite";
 
 const Palette:string[] = [
@@ -39,6 +44,11 @@ class Graph {
         }
     }
 
+    Rect():Rect {
+        const cv = this.cv;
+        return <Rect>{x:0, y:0, w:cv.width, h:cv.height};
+    }
+
     Clear(pi:number) {
         const cv = this.cv;
         const ctx = this.ctx;
@@ -55,12 +65,12 @@ class Graph {
         ctx.fillRect(x*wc, y*wc, wc, wc);
     }
 
-    DrawCell(x:number, y:number, cell:number[][]) {
+    DrawFrame(x:number, y:number, frame:Frame) {
         const topx = x;
         const topy = y;
 
-        for (let y=0; y < cell.length; y++) {
-            const row = cell[y];
+        for (let y=0; y < frame.length; y++) {
+            const row = frame[y];
             for (let x=0; x < row.length; x++) {
                 if (row[x] == 0) {
                     continue;
@@ -71,7 +81,7 @@ class Graph {
     }
 
     DrawSprite(sp:Sprite) {
-        this.DrawCell(sp.x, sp.y, sp.CurrentCell());
+        this.DrawFrame(sp.x, sp.y, sp.CurrentFrame());
     }
 
     DrawText(x:number, y:number, s:string, fi:number, pi:number) {

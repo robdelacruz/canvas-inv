@@ -1,7 +1,7 @@
 /*
 Functions
 -------
-newInv(type:InvType, x:number, y:number):Sprite
+newInv(invType:string, x:number, y:number):Sprite
 
 Enums
 -----
@@ -11,7 +11,7 @@ Scene
 -----
 new(g:Graph)
 SetShip(ship:Sprite)
-AddInv(type:InvType):Inv
+AddInv(invType:string):Inv
 AddInvMissile(ms:Sprite)
 AddShipMissile(ms:Sprite)
 Update()
@@ -19,11 +19,9 @@ Draw()
 
 */
 
-import {Cell} from "./common";
+import {Frame, FrameSeq} from "./common";
 import {Sprite} from "./sprite.js";
 import {Graph} from "./graph";
-
-enum InvType {A, B, C}
 
 class Scene {
     g:Graph;
@@ -42,8 +40,8 @@ class Scene {
     SetShip(ship:Sprite) {
         this.ship = ship;
     }
-    AddInv(type:InvType, x:number, y:number): Sprite {
-        const sp = newInv(type, x,y);
+    AddInv(invType:string, x:number, y:number): Sprite {
+        const sp = newInv(invType, x,y);
         this.invs.push(sp);
         return sp;
     }
@@ -64,8 +62,8 @@ class Scene {
         }
 
         if (ship != null) {
-//            ship.x += 2;
             ship.Animate();
+            ship.Update();
         }
     }
 
@@ -86,7 +84,7 @@ class Scene {
     }
 }
 
-const invACells = <Cell[]>[
+const invAFrameSeq = <FrameSeq>[
 [
     [0,0,1,0,0,0,0,0,1,0,0],
     [0,0,0,1,0,0,0,1,0,0,0],
@@ -108,7 +106,7 @@ const invACells = <Cell[]>[
     [0,1,0,0,0,0,0,0,0,1,0],
 ]];
 
-const invBCells = <Cell[]>[
+const invBFrameSeq = <FrameSeq>[
 [
     [0,0,0,0,2,2,2,2,0,0,0,0],
     [0,2,2,2,2,2,2,2,2,2,2,0],
@@ -129,7 +127,7 @@ const invBCells = <Cell[]>[
     [2,2,0,0,0,0,0,0,0,0,2,2],
 ]];
 
-const invCCells = <Cell[]>[
+const invCFrameSeq = <FrameSeq>[
 [
     [0,0,0,3,3,0,0,0],
     [0,0,3,3,3,3,0,0],
@@ -150,36 +148,36 @@ const invCCells = <Cell[]>[
     [3,0,3,0,0,3,0,3],
 ]];
 
-function newInv(type:InvType, x:number, y:number):Sprite {
-    let invCells:Cell[];
-    if (type == InvType.A) {
-        invCells = invACells;
-    } else if (type == InvType.B) {
-        invCells = invBCells;
-    } else {
-        invCells = invCCells;
-    }
+const invFrameSeqs = {
+    "default": invAFrameSeq,
+    "B": invBFrameSeq,
+    "C": invCFrameSeq,
+};
 
-    const sp = new Sprite(invCells);
+function newInv(invType:string, x:number, y:number):Sprite {
+    const sp = new Sprite(invFrameSeqs);
+    sp.MsPerFrame = 200;
     sp.x = x;
     sp.y = y;
 
     sp.AddAction("horz", function(sp:Sprite, msElapsed:number):boolean {
         if (msElapsed >= 300) {
-            sp.x += 1;
+            sp.x += 2;
             return true;
         }
         return false;
     });
 
     sp.AddAction("vert", function(sp:Sprite, msElapsed:number):boolean {
-        let yinc = 0;
-        if (type == InvType.A || type == InvType.C) {
-            yinc = 5;
-        } else {
-            yinc = 2;
-        }
-        if (msElapsed >= 2000) {
+        if (msElapsed >= 1500) {
+            let yinc = 0;
+            if (invType == "B") {
+                sp.SelectFrameSeq("B");
+                yinc = 3;
+            } else if (invType == "C") {
+                sp.SelectFrameSeq("C");
+                yinc = 1;
+            }
             sp.y += yinc;
 
             sp.MsPerFrame = 200;
@@ -201,5 +199,5 @@ function newInv(type:InvType, x:number, y:number):Sprite {
     return sp;
 }
 
-export {Scene, InvType};
+export {Scene};
 

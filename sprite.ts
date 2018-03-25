@@ -1,18 +1,20 @@
 /*
 Sprite
 ------
-new(cell:number[][])
+constructor(frameSeqs:{[k:string]:FrameSeq}, msPerFrame = 0) {
 Rect():Rect
+CurrentFrameSeq():FrameSeq {
+CurrentFrame():Frame
 NextFrame()
-CurrentCell():Cell
 
 Animate()
 Update()
 AddAction(actionID:string, fn:ActionCB)
+SelectFrameSeq(k:string):boolean
 
 */
 
-import {Cell, Rect} from "./common";
+import {Frame, FrameSeq, Rect} from "./common";
 
 interface ActionCB {
     (sp:Sprite, msElapsed:number): boolean;
@@ -21,8 +23,9 @@ interface ActionCB {
 class Sprite {
     x: number;
     y: number;
-    cells: Cell[];
+    FrameSeqs: {[k:string]:FrameSeq};
     iFrame: number;
+    curFrameSeq: FrameSeq;
 
     MsPerFrame: number;     // milliseconds per cell frame
     lastAnimateTime: number;  // last animate time
@@ -32,9 +35,21 @@ class Sprite {
 
     Props: {[k:string]:string};
 
-    constructor(cells:Cell[], msPerFrame = 0) {
-        this.cells = cells;
+    constructor(frameSeqs:{[k:string]:FrameSeq}, msPerFrame = 0) {
         this.MsPerFrame = msPerFrame;
+
+        let curFrameSeq:FrameSeq = [[[0,],]];
+        this.FrameSeqs = frameSeqs;
+        if (this.FrameSeqs["default"] != null) {
+            curFrameSeq = this.FrameSeqs["default"];
+        } else {
+            // No "default" frameseq, so select any other key.
+            for (const k in this.FrameSeqs) {
+                curFrameSeq = this.FrameSeqs[k];
+                break;
+            }
+        }
+        this.curFrameSeq = curFrameSeq;
 
         this.x = 0;
         this.y = 0;
@@ -48,20 +63,20 @@ class Sprite {
     }
 
     Rect():Rect {
-        const cell = this.CurrentCell();
+        const frame = this.CurrentFrame();
         return <Rect>{
             x: this.x,
             y: this.y,
-            w: cell[0].length,
-            h: cell.length,
+            w: frame[0].length,
+            h: frame.length,
         };
+    }
+    CurrentFrame():Frame {
+        return this.curFrameSeq[this.iFrame % this.curFrameSeq.length];
     }
     NextFrame() {
         this.iFrame++;
-        this.iFrame = this.iFrame % this.cells.length;
-    }
-    CurrentCell():Cell {
-        return this.cells[this.iFrame];
+        this.iFrame = this.iFrame % this.curFrameSeq.length;
     }
 
     Animate() {
@@ -99,6 +114,16 @@ class Sprite {
 
         const msNow = new Date().getTime();
         this.lastActionTime[actionID] = msNow;
+    }
+
+    SelectFrameSeq(k:string):boolean {
+        if (this.FrameSeqs[k] == null) {
+            return false;
+        }
+
+        this.curFrameSeq = this.FrameSeqs[k];
+        this.iFrame = 0;
+        return true;
     }
 }
 

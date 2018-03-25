@@ -19,7 +19,7 @@ interface Rect {
     h: number,
 }
 
-type Cell=number[][];
-type CellSeq=Cell[];
+type Frame=number[][];
+type FrameSeq=Frame[];
 
-export {Pos, Rect, Cell, CellSeq};
+export {Pos, Rect, Frame, FrameSeq};

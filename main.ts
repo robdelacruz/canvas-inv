@@ -1,6 +1,6 @@
 import {Sprite} from "./sprite.js";
 import {Graph} from "./graph.js";
-import {Scene, InvType} from "./scene.js";
+import {Scene} from "./scene.js";
 
 const shipCell = [
     [0,0,0,0,0,0,0,0],
@@ -28,9 +28,9 @@ const invMissileCell = [
 ];
 
 let graph:Graph;
-let ship = new Sprite([shipCell], 1000);
-let shipMissile = new Sprite([shipMissileCell], 1000);
-let invMissile = new Sprite([invMissileCell], 1000);
+let ship = new Sprite({"default": [shipCell]}, 1000);
+let shipMissile = new Sprite({"default": [shipMissileCell]}, 1000);
+let invMissile = new Sprite({"default": [invMissileCell]}, 1000);
 
 invMissile.x = 25;
 invMissile.y = 8;
@@ -58,12 +58,12 @@ function main() {
 
     const pad = 10;
     let inv:Sprite;
-    inv = scene.AddInv(InvType.A, 0,0);
-    inv = scene.AddInv(InvType.A, spXEdge(inv)+pad, 0);
-    inv = scene.AddInv(InvType.B, spXEdge(inv)+pad, 0);
-    inv = scene.AddInv(InvType.C, spXEdge(inv)+pad, 0);
-    inv = scene.AddInv(InvType.A, spXEdge(inv)+pad, 0);
-    scene.AddInv(InvType.B, 0,20);
+    inv = scene.AddInv("C", 0,0);
+    inv = scene.AddInv("A", spXEdge(inv)+pad, 0);
+    inv = scene.AddInv("B", spXEdge(inv)+pad, 0);
+    inv = scene.AddInv("B", spXEdge(inv)+pad, 0);
+    inv = scene.AddInv("A", spXEdge(inv)+pad, 0);
+    scene.AddInv("C", 0,20);
 
     const fps = 30;
     setInterval(function() {
