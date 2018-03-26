@@ -34,7 +34,7 @@ class Sprite {
     ActionsTable: ActionsMap;
     lastActionTime: {[k:string]:number};
 
-    Props: {[k:string]:string};
+    Props: {[id:string]:string};
 
     constructor(framesTable:FramesMap, msPerFrame = 0) {
         this.MsPerFrame = msPerFrame;

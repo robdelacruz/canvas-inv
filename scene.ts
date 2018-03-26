@@ -153,33 +153,47 @@ const invFramesTable = {
     "C": invCFrames,
 };
 
+// Return random int from 0 to n-1.
+function randInt(n:number):number {
+    return Math.floor(Math.random() * n);
+}
+
 function newInv(invType:string, x:number, y:number):Sprite {
     const sp = new Sprite(invFramesTable);
-    sp.MsPerFrame = 200;
+    if (invType == "A") {
+        sp.SelectActiveFrames("A");
+        sp.MsPerFrame = 800;
+    } else if (invType == "B") {
+        sp.SelectActiveFrames("B");
+        sp.MsPerFrame = 500;
+    } else {
+        sp.SelectActiveFrames("C");
+        sp.MsPerFrame = 200;
+    }
     sp.x = x;
     sp.y = y;
+
+    const diveProbability = randInt(100);
+    if (diveProbability > 50) {
+        sp.AddAction("dive", function(sp:Sprite, msElapsed:number):boolean {
+            if (msElapsed >= 100) {
+                sp.y += 4;
+
+                const swingRange = 15
+                const dx = (randInt(swingRange)+1) - (swingRange/2);
+                sp.x += dx;
+
+                return true;
+            }
+            return false;
+        });
+
+        return sp;
+    }
 
     sp.AddAction("horz", function(sp:Sprite, msElapsed:number):boolean {
         if (msElapsed >= 300) {
             sp.x += 2;
-            return true;
-        }
-        return false;
-    });
-
-    sp.AddAction("vert", function(sp:Sprite, msElapsed:number):boolean {
-        if (msElapsed >= 1500) {
-            let yinc = 0;
-            if (invType == "B") {
-                sp.SelectActiveFrames("B");
-                yinc = 3;
-            } else if (invType == "C") {
-                sp.SelectActiveFrames("C");
-                yinc = 1;
-            }
-            sp.y += yinc;
-
-            sp.MsPerFrame = 200;
             return true;
         }
         return false;
