@@ -19,7 +19,6 @@ interface Rect {
     h: number,
 }
 
-type Frame=number[][];
-type FrameSeq=Frame[];
+type Frame=string[];
 
-export {Pos, Rect, Frame, FrameSeq};
+export {Pos, Rect, Frame};

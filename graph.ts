@@ -66,16 +66,18 @@ class Graph {
     }
 
     DrawFrame(x:number, y:number, frame:Frame) {
+        const charCodeZero = "0".charCodeAt(0);
         const topx = x;
         const topy = y;
 
         for (let y=0; y < frame.length; y++) {
-            const row = frame[y];
-            for (let x=0; x < row.length; x++) {
-                if (row[x] == 0) {
+            const srow = frame[y];
+            for (let x=0; x < srow.length; x++) {
+                const pi = srow.charCodeAt(x) - charCodeZero;
+                if (pi == 0) {
                     continue;
                 }
-                this.Plot(topx+x, topy+y, row[x]);
+                this.Plot(topx+x, topy+y, pi);
             }
         }
     }

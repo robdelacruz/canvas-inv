@@ -3,60 +3,64 @@ Sprite
 ------
 constructor(frameSeqs:{[k:string]:FrameSeq}, msPerFrame = 0) {
 Rect():Rect
-CurrentFrameSeq():FrameSeq {
 CurrentFrame():Frame
 NextFrame()
+SelectActiveFrames(framesID:string):boolean
 
 Animate()
 Update()
 AddAction(actionID:string, fn:ActionCB)
-SelectFrameSeq(k:string):boolean
 
 */
 
-import {Frame, FrameSeq, Rect} from "./common";
+import {Frame, Rect} from "./common";
 
 interface ActionCB {
     (sp:Sprite, msElapsed:number): boolean;
 }
+type FramesMap={[framesID:string]:Frame[]};
+type ActionsMap={[actionID:string]:ActionCB};
 
 class Sprite {
     x: number;
     y: number;
-    FrameSeqs: {[k:string]:FrameSeq};
+    FramesTable: FramesMap;
     iFrame: number;
-    curFrameSeq: FrameSeq;
+    activeFrames: Frame[];
 
     MsPerFrame: number;     // milliseconds per cell frame
     lastAnimateTime: number;  // last animate time
 
-    Actions: {[k:string]:ActionCB};
+    ActionsTable: ActionsMap;
     lastActionTime: {[k:string]:number};
 
     Props: {[k:string]:string};
 
-    constructor(frameSeqs:{[k:string]:FrameSeq}, msPerFrame = 0) {
+    constructor(framesTable:FramesMap, msPerFrame = 0) {
         this.MsPerFrame = msPerFrame;
 
-        let curFrameSeq:FrameSeq = [[[0,],]];
-        this.FrameSeqs = frameSeqs;
-        if (this.FrameSeqs["default"] != null) {
-            curFrameSeq = this.FrameSeqs["default"];
-        } else {
-            // No "default" frameseq, so select any other key.
-            for (const k in this.FrameSeqs) {
-                curFrameSeq = this.FrameSeqs[k];
+        this.FramesTable = framesTable;
+        let activeFrames = framesTable["default"];
+        if (activeFrames == null) {
+            // No "default" frames, so select the first available frame set
+            // in the table as the active frames.
+            for (const k in framesTable) {
+                activeFrames = framesTable[k];
                 break;
             }
         }
-        this.curFrameSeq = curFrameSeq;
+        this.activeFrames = activeFrames || [];
+        if (this.activeFrames.length > 0) {
+            this.iFrame = 0;
+        } else {
+            this.iFrame = -1;
+        }
 
         this.x = 0;
         this.y = 0;
-        this.iFrame = 0;
         this.lastAnimateTime = new Date().getTime();
 
-        this.Actions = {};
+        this.ActionsTable = {};
         this.lastActionTime = {};
 
         this.Props = {};
@@ -64,19 +68,42 @@ class Sprite {
 
     Rect():Rect {
         const frame = this.CurrentFrame();
-        return <Rect>{
+        let rect = <Rect>{
             x: this.x,
             y: this.y,
-            w: frame[0].length,
+            w: 0,
             h: frame.length,
         };
+
+        if (frame.length > 0) {
+            rect.w = frame[0].length;
+        }
+        return rect;
     }
     CurrentFrame():Frame {
-        return this.curFrameSeq[this.iFrame % this.curFrameSeq.length];
+        // No active frames.
+        if (this.iFrame == -1 || this.activeFrames.length == 0) {
+            return [];
+        }
+
+        return this.activeFrames[this.iFrame % this.activeFrames.length];
     }
     NextFrame() {
         this.iFrame++;
-        this.iFrame = this.iFrame % this.curFrameSeq.length;
+        this.iFrame = this.iFrame % this.activeFrames.length;
+    }
+    SelectActiveFrames(framesID:string):boolean {
+        if (this.FramesTable[framesID] == null) {
+            return false;
+        }
+
+        this.activeFrames = this.FramesTable[framesID];
+        if (this.activeFrames.length > 0) {
+            this.iFrame = 0;
+        } else {
+            this.iFrame = -1;
+        }
+        return true;
     }
 
     Animate() {
@@ -95,36 +122,27 @@ class Sprite {
     Update() {
         const msNow = new Date().getTime();
 
-        for (const k in this.Actions) {
-            let msLastTime = this.lastActionTime[k];
+        for (const actionID in this.ActionsTable) {
+            let msLastTime = this.lastActionTime[actionID];
             if (msLastTime == null) {
                 msLastTime = 0;
             }
 
             const msElapsed = msNow - msLastTime;
-            const actionFn = this.Actions[k];
+            const actionFn = this.ActionsTable[actionID];
             if (actionFn(this, msElapsed) == true) {
-                this.lastActionTime[k] = msNow;
+                this.lastActionTime[actionID] = msNow;
             }
         }
     }
 
     AddAction(actionID:string, fn:ActionCB) {
-        this.Actions[actionID] = fn;
+        this.ActionsTable[actionID] = fn;
 
         const msNow = new Date().getTime();
         this.lastActionTime[actionID] = msNow;
     }
 
-    SelectFrameSeq(k:string):boolean {
-        if (this.FrameSeqs[k] == null) {
-            return false;
-        }
-
-        this.curFrameSeq = this.FrameSeqs[k];
-        this.iFrame = 0;
-        return true;
-    }
 }
 
 export {Sprite};
