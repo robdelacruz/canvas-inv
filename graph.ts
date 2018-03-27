@@ -46,7 +46,12 @@ class Graph {
 
     Rect():Rect {
         const cv = this.cv;
-        return <Rect>{x:0, y:0, w:cv.width, h:cv.height};
+        return <Rect>{
+            x: 0,
+            y: 0,
+            w: Math.floor(cv.width/this.wcell),
+            h: Math.floor(cv.height/this.wcell),
+        };
     }
 
     Clear(pi:number) {

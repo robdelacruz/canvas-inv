@@ -26,14 +26,14 @@ import {Graph} from "./graph";
 class Scene {
     g:Graph;
     invs: Sprite[];
-    ship: Sprite | null;
+    ship: Sprite;
     invMissiles: Sprite[];
     shipMissiles: Sprite[];
 
     constructor(g:Graph) {
         this.g = g;
         this.invs = [];
-        this.ship = null;
+        this.ship = newShip(0,0);
         this.invMissiles = [];
         this.shipMissiles = [];
     }
@@ -50,6 +50,65 @@ class Scene {
     }
     AddShipMissile(ms:Sprite) {
         this.shipMissiles.push(ms);
+    }
+
+    AddInvaders() {
+        // Template invader sprite, for measurement purposes.
+        const spTemplateInv = new Sprite(invFramesTable);
+        const invRect = spTemplateInv.Rect();
+
+        // Invader width and height
+        const wInv = invRect.w;
+        const hInv = invRect.h;
+
+        // Invader horizontal and vertical margins
+        const yInvMargin = hInv/3;
+        const xInvMargin = wInv/4;
+        const sideMargin = wInv*2;
+        const topMargin = hInv;
+
+        // Row measurements
+        const graphRect = this.g.Rect();
+        const wGraph = graphRect.w;
+        const wRow = wGraph - (sideMargin*2);
+
+        // Number of invaders per row
+        const nInvRow = wRow / (wInv + xInvMargin);
+        const nRows = 5;
+
+//        console.log(`wGraph=${wGraph}, wRow=${wRow}, wInv=${wInv}, xInvMargin=${xInvMargin}, nInvRow=${nInvRow}`);
+
+        let y = topMargin;
+        let invType = "A"
+        for (let i=0; i < nRows; i++) {
+            let x = sideMargin;
+            for (let j=0; j < nInvRow; j++) {
+                this.AddInv(invType, x,y);
+                x += wInv + xInvMargin;
+            }
+            y += hInv + yInvMargin;
+            invType = invType=="A"? "B": invType=="B"? "C": "A";
+        }
+
+    }
+
+    AddShip() {
+        // Template ship sprite, for measurement purposes.
+        const spTemplateShip = new Sprite(shipFramesTable);
+        const shipRect = spTemplateShip.Rect();
+        const wShip = shipRect.w;
+        const hShip = shipRect.h;
+
+        // Margins
+        const bottomMargin = shipRect.h / 2;
+
+        const graphRect = this.g.Rect();
+        const hGraph = graphRect.h;
+        const wGraph = graphRect.w;
+
+        const xShip = wGraph/2 - wShip/2;
+        const yShip = hGraph - bottomMargin - hShip;
+        this.ship = newShip(xShip,yShip);
     }
 
     Update() {
@@ -71,82 +130,124 @@ class Scene {
         const g = this.g;
         const invs = this.invs;
         const ship = this.ship;
+        const shipMissiles = this.shipMissiles;
 
         g.Clear(0);
+
+        if (ship != null) {
+            g.DrawSprite(ship);
+        }
 
         for (const inv of invs) {
             g.DrawSprite(inv);
         }
 
-        if (ship != null) {
-            g.DrawSprite(ship);
+        for (const m of shipMissiles) {
+            g.DrawSprite(m);
         }
+
+    }
+
+    FireShipMissile() {
+        const spMissileTemplate = new Sprite(shipMissileFramesTable);
+        const missileRect = spMissileTemplate.Rect();
+
+        const ship = this.ship;
+        const shipRect = ship.Rect();
+
+        const xMissile = (shipRect.x + shipRect.w/2) - (missileRect.w/2);
+        const yMissile = shipRect.y - missileRect.h;
+        const missile = newShipMissile(xMissile,yMissile);
+
+        this.shipMissiles.push(missile);
+    }
+
+    HandleKBEvent(e:KeyboardEvent):boolean {
+        const ship = this.ship;
+
+        //        console.log(e.key);
+
+        switch(e.key) {
+        case "ArrowLeft":
+            ship.x -= 1;
+            break;
+        case "ArrowRight":
+            ship.x += 1;
+            break;
+        case "ArrowUp":
+        case " ":
+            this.FireShipMissile();
+            break;
+        default:
+            return false;
+        }
+
+        return true;
     }
 }
 
 const invAFrames = <Frame[]>[
 [
-    "00100000100",
-    "00010001000",
-    "00111111100",
-    "01101110110",
-    "11111111111",
-    "10111111101",
-    "10100000101",
-    "00011011000",
+    "0010000100",
+    "0001001000",
+    "0011111100",
+    "0110110110",
+    "1111111111",
+    "1011111101",
+    "1010000101",
+    "0001001000",
 ], [
-    "00100000100",
-    "10010001001",
-    "10111111101",
-    "11101110111",
-    "11111111111",
-    "01111111100",
-    "00100000100",
-    "01000000010",
+    "0010000100",
+    "1001001001",
+    "1011111101",
+    "1110110111",
+    "1111111111",
+    "0011111100",
+    "0010000100",
+    "0100000010",
 ]];
 
 const invBFrames = <Frame[]>[
 [
-    "000022220000",
-    "022222222220",
-    "222222222222",
-    "222002200222",
-    "222222222222",
-    "002220022200",
-    "022002200220",
-    "002200002200",
+    "0002222000",
+    "0222222220",
+    "2222222222",
+    "2200220022",
+    "2222222222",
+    "0022002200",
+    "0200220020",
+    "0020000200",
 ], [
-    "000022220000",
-    "022222222220",
-    "222222222222",
-    "222002200222",
-    "222222222222",
-    "000220022000",
-    "002202202200",
-    "220000000022",
+    "0002222000",
+    "0222222220",
+    "2222222222",
+    "2200220022",
+    "2222222222",
+    "0022002200",
+    "0020220200",
+    "2200000022",
 ]];
 
 const invCFrames = <Frame[]>[
 [
-    "00033000",
-    "00333300",
-    "03333330",
-    "33033033",
-    "33333333",
-    "03033030",
-    "30000003",
-    "03000030",
+    "0000330000",
+    "0003333000",
+    "0033333300",
+    "0330330330",
+    "0333333330",
+    "0030330300",
+    "0300000030",
+    "0030000300",
 ], [
-    "00033000",
-    "00333300",
-    "03333330",
-    "33033033",
-    "33333333",
-    "00300300",
-    "03033030",
-    "30300303",
+    "0000330000",
+    "0003333000",
+    "0033333300",
+    "0330330330",
+    "0333333330",
+    "0003003000",
+    "0030330300",
+    "0303003030",
 ]];
-
 const invFramesTable = {
     "default": invAFrames,
     "B": invBFrames,
@@ -173,6 +274,7 @@ function newInv(invType:string, x:number, y:number):Sprite {
     sp.x = x;
     sp.y = y;
 
+    /*
     const diveProbability = randInt(100);
     if (diveProbability > 50) {
         sp.AddAction("dive", function(sp:Sprite, msElapsed:number):boolean {
@@ -198,6 +300,7 @@ function newInv(invType:string, x:number, y:number):Sprite {
         }
         return false;
     });
+     */
 
     /*
     sp.AddAction("animate", function(sp:Sprite, msElapsed:number):boolean {
@@ -211,6 +314,48 @@ function newInv(invType:string, x:number, y:number):Sprite {
 
     return sp;
 }
+
+const shipFrames = <Frame[]>[
+[
+    "0004000",
+    "0444440",
+    "4444444",
+    "4444444",
+]];
+const shipFramesTable = {
+    "default": shipFrames,
+};
+function newShip(x:number, y:number):Sprite {
+    const sp = new Sprite(shipFramesTable);
+    sp.x = x;
+    sp.y = y;
+    return sp;
+}
+
+const shipMissileFrames = <Frame[]>[
+[
+    "050",
+    "050",
+    "050",
+    "050",
+]];
+const shipMissileFramesTable = {
+    "default": shipMissileFrames,
+};
+function newShipMissile(x:number, y:number):Sprite {
+    const sp = new Sprite(shipMissileFramesTable);
+    sp.x = x;
+    sp.y = y;
+    return sp;
+}
+
+const invMissileCell = [
+    "0060",
+    "0600",
+    "0060",
+    "0600",
+];
+
 
 export {Scene};
 
