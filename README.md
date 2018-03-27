@@ -20,5 +20,5 @@ $ ./b
 
 ## Screenshot
 
-![screenshot](https://robdelacruz.github.io/images/canvas_inv_main.png "Screenshot")
+![screenshot](https://robdelacruz.github.io/images/canvas_inv_2018-03-26.png "Screenshot")
 
