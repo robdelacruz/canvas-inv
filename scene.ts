@@ -30,18 +30,22 @@ class Scene {
     invMissiles: Sprite[];
     shipMissiles: Sprite[];
 
+    dx: number;
+
     constructor(g:Graph) {
         this.g = g;
         this.invs = [];
         this.ship = newShip(0,0);
         this.invMissiles = [];
         this.shipMissiles = [];
+
+        this.dx = +2;
     }
     SetShip(ship:Sprite) {
         this.ship = ship;
     }
     AddInv(invType:string, x:number, y:number): Sprite {
-        const sp = newInv(invType, x,y);
+        const sp = this.newInv(invType, x,y);
         this.invs.push(sp);
         return sp;
     }
@@ -114,6 +118,7 @@ class Scene {
     Update() {
         const invs = this.invs;
         const ship = this.ship;
+        const shipMissiles = this.shipMissiles;
 
         for (const inv of invs) {
             inv.Animate();
@@ -123,6 +128,11 @@ class Scene {
         if (ship != null) {
             ship.Animate();
             ship.Update();
+        }
+
+        for (const ms of shipMissiles) {
+            ms.Animate();
+            ms.Update();
         }
     }
 
@@ -183,6 +193,26 @@ class Scene {
         }
 
         return true;
+    }
+
+    newInv(invType:string, x:number, y:number):Sprite {
+        const self = this;
+
+        const sp = new Sprite(invFramesTable);
+        if (invType == "A") {
+            sp.SelectActiveFrames("A");
+            sp.MsPerFrame = 800;
+        } else if (invType == "B") {
+            sp.SelectActiveFrames("B");
+            sp.MsPerFrame = 500;
+        } else {
+            sp.SelectActiveFrames("C");
+            sp.MsPerFrame = 200;
+        }
+        sp.x = x;
+        sp.y = y;
+
+        return sp;
     }
 }
 
@@ -259,62 +289,6 @@ function randInt(n:number):number {
     return Math.floor(Math.random() * n);
 }
 
-function newInv(invType:string, x:number, y:number):Sprite {
-    const sp = new Sprite(invFramesTable);
-    if (invType == "A") {
-        sp.SelectActiveFrames("A");
-        sp.MsPerFrame = 800;
-    } else if (invType == "B") {
-        sp.SelectActiveFrames("B");
-        sp.MsPerFrame = 500;
-    } else {
-        sp.SelectActiveFrames("C");
-        sp.MsPerFrame = 200;
-    }
-    sp.x = x;
-    sp.y = y;
-
-    /*
-    const diveProbability = randInt(100);
-    if (diveProbability > 50) {
-        sp.AddAction("dive", function(sp:Sprite, msElapsed:number):boolean {
-            if (msElapsed >= 100) {
-                sp.y += 4;
-
-                const swingRange = 15
-                const dx = (randInt(swingRange)+1) - (swingRange/2);
-                sp.x += dx;
-
-                return true;
-            }
-            return false;
-        });
-
-        return sp;
-    }
-
-    sp.AddAction("horz", function(sp:Sprite, msElapsed:number):boolean {
-        if (msElapsed >= 300) {
-            sp.x += 2;
-            return true;
-        }
-        return false;
-    });
-     */
-
-    /*
-    sp.AddAction("animate", function(sp:Sprite, msElapsed:number):boolean {
-        if (msElapsed >= 400) {
-            sp.NextFrame();
-            return true;
-        }
-        return false;
-    });
-     */
-
-    return sp;
-}
-
 const shipFrames = <Frame[]>[
 [
     "0004000",
@@ -346,6 +320,18 @@ function newShipMissile(x:number, y:number):Sprite {
     const sp = new Sprite(shipMissileFramesTable);
     sp.x = x;
     sp.y = y;
+
+    sp.AddAction("fire", function(sp:Sprite, msElapsed:number):boolean {
+        if (msElapsed >= 10) {
+            if (sp.y > 0) {
+                sp.y -= 2;
+            }
+            return true;
+        }
+
+        return false;
+    });
+
     return sp;
 }
 
