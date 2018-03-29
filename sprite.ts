@@ -1,4 +1,8 @@
 /*
+Functions
+---------
+rectsCollide(rect1:Rect, rect2:Rect):boolean
+
 Types
 -----
 Sprite
@@ -14,6 +18,9 @@ SprSelectActiveFrames(spr, framesID:string):boolean
 SprAnimate(spr)
 SprUpdate(spr)
 SprAddAction(spr, actionID:string, fn:ActionCB)
+
+SprCheckCollision(spr, spr2:Sprite):boolean
+SprCheckCollisionMultiple(spr, sprItems:Sprite[]):boolean
 
 */
 
@@ -152,6 +159,46 @@ function SprAddAction(spr:Sprite, actionID:string, fn:ActionCB) {
     spr.lastActionTime[actionID] = msNow;
 }
 
+function SprCheckCollision(spr:Sprite, spr2:Sprite):boolean {
+    const rect1 = SprRect(spr);
+    const rect2 = SprRect(spr2);
+    return rectsCollide(rect1, rect2);
+}
+
+function SprCheckCollisionMultiple(spr:Sprite, sprItems:Sprite[]):boolean {
+    let i=1;
+    const rect = SprRect(spr);
+    for (const sprCheck of sprItems) {
+        const rectCheck = SprRect(sprCheck);
+        if (rectsCollide(rect, rectCheck)) {
+            console.log(`Collision on sprite ${i} of ${sprItems.length}`);
+            return true;
+        }
+        i++;
+    }
+    return false;
+}
+
+function rectsCollide(rect1:Rect, rect2:Rect):boolean {
+    const Ax1 = rect1.x;
+    const Ax2 = rect1.x + rect1.w;
+    const Ay1 = rect1.y;
+    const Ay2 = rect1.y + rect1.h;
+
+    const Bx1 = rect2.x;
+    const Bx2 = rect2.x + rect2.w;
+    const By1 = rect2.y;
+    const By2 = rect2.y + rect2.h;
+
+    if (Ax1 < Bx2 &&
+        Ax2 > Bx1 &&
+        Ay1 < By2 &&
+        Ay2 > By1) {
+        return true;
+    }
+    return false;
+}
+
 export {
     Sprite,
     NewSprite,
@@ -162,4 +209,6 @@ export {
     SprAnimate,
     SprUpdate,
     SprAddAction,
+    SprCheckCollision,
+    SprCheckCollisionMultiple,
 };

@@ -9,7 +9,6 @@ NewScene(g:Graph):Scene
 ScnAddInvaders()
 ScnAddShip()
 ScnUpdate()
-ScnUpdate()
 ScnDraw()
 ScnFireShipMissile()
 ScnHandleKBEvent(e:KeyboardEvent):boolean
@@ -17,7 +16,7 @@ ScnHandleKBEvent(e:KeyboardEvent):boolean
 */
 
 import {Frame} from "./common";
-import {Sprite,SprRect,SprAnimate,SprUpdate} from "./sprite.js";
+import {Sprite,SprRect,SprAnimate,SprUpdate,SprAddAction,SprCheckCollisionMultiple} from "./sprite.js";
 import {Graph,GraphRect,GraphClear,GraphDrawSprite} from "./graph.js";
 import {NewInv,NewShip,NewShipMissile} from "./gameobjects.js";
 
@@ -27,6 +26,7 @@ interface Scene {
     ship: Sprite,
     invMs: Sprite[],
     shipMs: Sprite[],
+    bgObjs: Sprite[],
 }
 
 function NewScene(g:Graph):Scene {
@@ -36,6 +36,7 @@ function NewScene(g:Graph):Scene {
         ship: NewShip(0,0),
         invMs: [],
         shipMs: [],
+        bgObjs: [],
     };
 }
 
@@ -103,12 +104,18 @@ function ScnUpdate(scn:Scene) {
 
     if (scn.ship != null) {
         SprAnimate(scn.ship);
-        SprAnimate(scn.ship);
+        SprUpdate(scn.ship);
     }
 
-    for (const ms of scn.shipMs) {
+    for (let i=0; i < scn.shipMs.length; i++) {
+        const ms = scn.shipMs[i];
         SprAnimate(ms);
-        SprAnimate(ms);
+        SprUpdate(ms);
+
+        if (SprCheckCollisionMultiple(ms, scn.invs)) {
+            scn.shipMs.splice(i,1);
+            i--;
+        }
     }
 }
 
@@ -140,7 +147,6 @@ function ScnFireShipMissile(scn:Scene) {
     const xMissile = (shipRect.x + shipRect.w/2) - (missileRect.w/2);
     const yMissile = shipRect.y - missileRect.h;
     const missile = NewShipMissile(xMissile,yMissile);
-
     scn.shipMs.push(missile);
 }
 
