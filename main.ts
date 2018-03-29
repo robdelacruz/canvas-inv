@@ -1,32 +1,30 @@
 import {Sprite} from "./sprite.js";
-import {Graph} from "./graph.js";
-import {Scene} from "./scene.js";
-
-let graph:Graph;
-
-function spXEdge(sp:Sprite):number {
-    const rect = sp.Rect();
-    return rect.x + rect.w - 1;
-}
+import {Graph, NewGraph} from "./graph.js";
+import {
+    NewScene,
+    ScnAddInvaders,
+    ScnAddShip,
+    ScnUpdate,
+    ScnDraw,
+    ScnHandleKBEvent
+} from "./scene.js";
 
 function main() {
     const cv = <HTMLCanvasElement>document.getElementById("canvas1");
-    const ctx = <CanvasRenderingContext2D>cv.getContext("2d");
+    let graph = NewGraph(cv, 4);
+    const scn = NewScene(graph);
 
-    graph = new Graph(cv, ctx, 4);
-    const scene = new Scene(graph);
-
-    scene.AddInvaders();
-    scene.AddShip();
+    ScnAddInvaders(scn);
+    ScnAddShip(scn);
 
     const fps = 30;
     setInterval(function() {
-        scene.Update();
-        scene.Draw();
+        ScnUpdate(scn);
+        ScnDraw(scn);
     }, 1000.0/fps);
 
     window.addEventListener("keydown", function(e:KeyboardEvent) {
-        scene.HandleKBEvent(e);
+        ScnHandleKBEvent(scn, e);
     });
 }
 
