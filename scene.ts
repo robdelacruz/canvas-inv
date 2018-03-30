@@ -16,7 +16,7 @@ ScnHandleKBEvent(e:KeyboardEvent):boolean
 */
 
 import {Frame} from "./common";
-import {Sprite,SprRect,SprAnimate,SprUpdate,SprAddAction,SprCheckCollisionMultiple} from "./sprite.js";
+import {Sprite,SprRect,SprAnimate,SprUpdate,SprAddAction,SprCheckCollision} from "./sprite.js";
 import {Graph,GraphRect,GraphClear,GraphDrawSprite} from "./graph.js";
 import {NewInv,NewShip,NewShipMissile} from "./gameobjects.js";
 
@@ -30,7 +30,7 @@ interface Scene {
 }
 
 function NewScene(g:Graph):Scene {
-    return <Scene>{
+    const scn = <Scene>{
         g: g,
         invs: [],
         ship: NewShip(0,0),
@@ -38,6 +38,13 @@ function NewScene(g:Graph):Scene {
         shipMs: [],
         bgObjs: [],
     };
+
+    // Garbage collect every 5 secs.
+    setInterval(function() {
+        ScnSweepObjects(scn);
+    }, 5000);
+
+    return scn;
 }
 
 function ScnAddInvaders(scn:Scene) {
@@ -98,6 +105,9 @@ function ScnAddShip(scn:Scene) {
 
 function ScnUpdate(scn:Scene) {
     for (const inv of scn.invs) {
+        if (inv.Props["remove"] != null) {
+            continue;
+        }
         SprAnimate(inv);
         SprUpdate(inv);
     }
@@ -107,16 +117,55 @@ function ScnUpdate(scn:Scene) {
         SprUpdate(scn.ship);
     }
 
-    for (let i=0; i < scn.shipMs.length; i++) {
-        const ms = scn.shipMs[i];
+    for (const ms of scn.shipMs) {
+        if (ms.Props["remove"] != null) {
+            continue;
+        }
         SprAnimate(ms);
         SprUpdate(ms);
+    }
 
-        if (SprCheckCollisionMultiple(ms, scn.invs)) {
-            scn.shipMs.splice(i,1);
-            i--;
+    // Check each ship missile hit on an invader.
+for_shipMs:
+    for (const ms of scn.shipMs) {
+        for (const inv of scn.invs) {
+            if (inv.Props["remove"] != null || ms.Props["remove"] != null) {
+                continue;
+            }
+            if (SprCheckCollision(ms, inv)) {
+                console.log("Missile hit invader.");
+                ms.Props["remove"] = "y";
+                inv.Props["remove"] = "y";
+                continue for_shipMs;
+            }
         }
     }
+}
+
+function ScnSweepObjects(scn:Scene) {
+    // Clear out missiles marked for removal.
+    let ncleared = 0;
+    let aliveMs = [];
+    for (const ms of scn.shipMs) {
+        if (ms.Props["remove"] == null) {
+            aliveMs.push(ms);
+        } else {
+            ncleared++;
+        }
+    }
+    scn.shipMs = aliveMs;
+
+    let ninvcleared = 0;
+    let aliveInvs = [];
+    for (const inv of scn.invs) {
+        if (inv.Props["remove"] == null) {
+            aliveInvs.push(inv);
+        } else {
+            ninvcleared++;
+        }
+    }
+    scn.invs = aliveInvs;
+    console.log(`ScnSweepObjects(): active missiles: ${scn.shipMs.length}, cleared missiles: ${ncleared}, active inv: ${scn.invs.length}, cleared invs: ${ninvcleared}`);
 }
 
 function ScnDraw(scn:Scene) {
@@ -129,10 +178,16 @@ function ScnDraw(scn:Scene) {
     }
 
     for (const inv of scn.invs) {
+        if (inv.Props["remove"] != null) {
+            continue;
+        }
         GraphDrawSprite(g, inv);
     }
 
     for (const m of scn.shipMs) {
+        if (m.Props["remove"] != null) {
+            continue;
+        }
         GraphDrawSprite(g, m);
     }
 }
@@ -146,8 +201,20 @@ function ScnFireShipMissile(scn:Scene) {
 
     const xMissile = (shipRect.x + shipRect.w/2) - (missileRect.w/2);
     const yMissile = shipRect.y - missileRect.h;
-    const missile = NewShipMissile(xMissile,yMissile);
-    scn.shipMs.push(missile);
+    const ms = NewShipMissile(xMissile,yMissile);
+
+    SprAddAction(ms, "fire", function(sp:Sprite, msElapsed:number):boolean {
+        if (msElapsed >= 10) {
+            if (sp.y > 0) {
+                sp.y -= 2;
+            }
+            return true;
+        }
+
+        return false;
+    });
+
+    scn.shipMs.push(ms);
 }
 
 function ScnHandleKBEvent(scn:Scene, e:KeyboardEvent):boolean {

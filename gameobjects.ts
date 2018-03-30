@@ -134,18 +134,6 @@ function NewShipMissile(x:number, y:number):Sprite {
     const spr = NewSprite(shipMissileFramesTable);
     spr.x = x;
     spr.y = y;
-
-    SprAddAction(spr, "fire", function(sp:Sprite, msElapsed:number):boolean {
-        if (msElapsed >= 10) {
-            if (sp.y > 0) {
-                sp.y -= 2;
-            }
-            return true;
-        }
-
-        return false;
-    });
-
     return spr;
 }
 

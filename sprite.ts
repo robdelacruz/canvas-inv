@@ -171,7 +171,6 @@ function SprCheckCollisionMultiple(spr:Sprite, sprItems:Sprite[]):boolean {
     for (const sprCheck of sprItems) {
         const rectCheck = SprRect(sprCheck);
         if (rectsCollide(rect, rectCheck)) {
-            console.log(`Collision on sprite ${i} of ${sprItems.length}`);
             return true;
         }
         i++;
