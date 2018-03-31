@@ -26,6 +26,9 @@ function main() {
     window.addEventListener("keydown", function(e:KeyboardEvent) {
         ScnHandleKBEvent(scn, e);
     });
+    window.addEventListener("keyup", function(e:KeyboardEvent) {
+        ScnHandleKBEvent(scn, e);
+    });
 }
 
 main();

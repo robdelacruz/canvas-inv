@@ -120,6 +120,7 @@ function NewInv(invType:string, x:number, y:number):Sprite {
     }
     spr.x = x;
     spr.y = y;
+//    SprAddAction(spr, "move", fnInvLateralMovement);
     return spr;
 }
 
@@ -135,6 +136,15 @@ function NewShipMissile(x:number, y:number):Sprite {
     spr.x = x;
     spr.y = y;
     return spr;
+}
+
+function fnInvLateralMovement(inv:Sprite, msElapsed:number):boolean {
+    const dx = 2;
+    if (msElapsed >= 400) {
+        inv.x += dx;
+        return true;
+    }
+    return false;
 }
 
 export {

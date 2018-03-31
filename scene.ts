@@ -15,29 +15,35 @@ ScnHandleKBEvent(e:KeyboardEvent):boolean
 
 */
 
-import {Frame} from "./common";
+import {Pos,Frame} from "./common";
 import {Sprite,SprRect,SprAnimate,SprUpdate,SprAddAction,SprCheckCollision} from "./sprite.js";
 import {Graph,GraphRect,GraphClear,GraphDrawSprite} from "./graph.js";
 import {NewInv,NewShip,NewShipMissile} from "./gameobjects.js";
+import {InvBlk,NewInvBlk,InvBlkMove} from "./invblk.js";
 
 interface Scene {
     g: Graph,
-    invs: Sprite[],
+    invblk: InvBlk,
     ship: Sprite,
     invMs: Sprite[],
     shipMs: Sprite[],
     bgObjs: Sprite[],
+    kbKeys: string[],
 }
 
 function NewScene(g:Graph):Scene {
+    const invblk = NewInvBlk(5, 7, <Pos>{x:5, y:5});
+
     const scn = <Scene>{
         g: g,
-        invs: [],
         ship: NewShip(0,0),
+        invblk: invblk,
         invMs: [],
         shipMs: [],
         bgObjs: [],
+        kbKeys: [],
     };
+
 
     // Garbage collect every 5 secs.
     setInterval(function() {
@@ -48,40 +54,7 @@ function NewScene(g:Graph):Scene {
 }
 
 function ScnAddInvaders(scn:Scene) {
-    // Template invader sprite, for measurement purposes.
-    const sprTemplateInv = NewInv("A", 0,0);
-    const invRect = SprRect(sprTemplateInv);
-
-    // Invader width and height
-    const wInv = invRect.w;
-    const hInv = invRect.h;
-
-    // Invader horizontal and vertical margins
-    const yInvMargin = hInv/3;
-    const xInvMargin = wInv/4;
-    const sideMargin = wInv*2;
-    const topMargin = hInv;
-
-    // Row measurements
-    const graphRect = GraphRect(scn.g);
-    const wGraph = graphRect.w;
-    const wRow = wGraph - (sideMargin*2);
-
-    // Number of invaders per row
-    const nInvRow = wRow / (wInv + xInvMargin);
-    const nRows = 5;
-
-    let y = topMargin;
-    let invType = "A"
-    for (let i=0; i < nRows; i++) {
-        let x = sideMargin;
-        for (let j=0; j < nInvRow; j++) {
-            scn.invs.push(NewInv(invType, x,y));
-            x += wInv + xInvMargin;
-        }
-        y += hInv + yInvMargin;
-        invType = invType=="A"? "B": invType=="B"? "C": "A";
-    }
+    scn.invblk
 }
 
 function ScnAddShip(scn:Scene) {
@@ -104,12 +77,35 @@ function ScnAddShip(scn:Scene) {
 }
 
 function ScnUpdate(scn:Scene) {
-    for (const inv of scn.invs) {
-        if (inv.Props["remove"] != null) {
-            continue;
+    const ib = scn.invblk;
+    InvBlkMove(ib, ib.pos.x + 0.5, ib.pos.y + 0.2);
+
+    const key = ScnKbKey(scn);
+    if (key != "") {
+        switch(key) {
+        case "ArrowLeft":
+            scn.ship.x -= 1;
+            break;
+        case "ArrowRight":
+            scn.ship.x += 1;
+            break;
+        case "ArrowUp":
+        case " ":
+            ScnFireShipMissile(scn);
+            break;
+        default:
+            break;
         }
-        SprAnimate(inv);
-        SprUpdate(inv);
+    }
+
+    for (const invRow of scn.invblk.Rows) {
+        for (const inv of invRow) {
+            if (inv == null) {
+                continue;
+            }
+            SprAnimate(inv);
+            SprUpdate(inv);
+        }
     }
 
     if (scn.ship != null) {
@@ -128,15 +124,19 @@ function ScnUpdate(scn:Scene) {
     // Check each ship missile hit on an invader.
 for_shipMs:
     for (const ms of scn.shipMs) {
-        for (const inv of scn.invs) {
-            if (inv.Props["remove"] != null || ms.Props["remove"] != null) {
-                continue;
-            }
-            if (SprCheckCollision(ms, inv)) {
-                console.log("Missile hit invader.");
-                ms.Props["remove"] = "y";
-                inv.Props["remove"] = "y";
-                continue for_shipMs;
+        for (let y=0; y < scn.invblk.Rows.length; y++) {
+            const invRow = scn.invblk.Rows[y];
+            for (let x=0; x < invRow.length; x++) {
+                const inv = invRow[x];
+                if (inv == null || ms.Props["remove"] != null) {
+                    continue;
+                }
+                if (SprCheckCollision(ms, inv)) {
+                    console.log("Missile hit invader.");
+                    ms.Props["remove"] = "y";
+                    invRow[x] = null;
+                    continue for_shipMs;
+                }
             }
         }
     }
@@ -154,18 +154,6 @@ function ScnSweepObjects(scn:Scene) {
         }
     }
     scn.shipMs = aliveMs;
-
-    let ninvcleared = 0;
-    let aliveInvs = [];
-    for (const inv of scn.invs) {
-        if (inv.Props["remove"] == null) {
-            aliveInvs.push(inv);
-        } else {
-            ninvcleared++;
-        }
-    }
-    scn.invs = aliveInvs;
-    console.log(`ScnSweepObjects(): active missiles: ${scn.shipMs.length}, cleared missiles: ${ncleared}, active inv: ${scn.invs.length}, cleared invs: ${ninvcleared}`);
 }
 
 function ScnDraw(scn:Scene) {
@@ -177,11 +165,13 @@ function ScnDraw(scn:Scene) {
         GraphDrawSprite(g, scn.ship);
     }
 
-    for (const inv of scn.invs) {
-        if (inv.Props["remove"] != null) {
-            continue;
+    for (const invRow of scn.invblk.Rows) {
+        for (const inv of invRow) {
+            if (inv == null) {
+                continue;
+            }
+            GraphDrawSprite(g, inv);
         }
-        GraphDrawSprite(g, inv);
     }
 
     for (const m of scn.shipMs) {
@@ -204,7 +194,7 @@ function ScnFireShipMissile(scn:Scene) {
     const ms = NewShipMissile(xMissile,yMissile);
 
     SprAddAction(ms, "fire", function(sp:Sprite, msElapsed:number):boolean {
-        if (msElapsed >= 10) {
+        if (msElapsed >= 5) {
             if (sp.y > 0) {
                 sp.y -= 2;
             }
@@ -217,24 +207,20 @@ function ScnFireShipMissile(scn:Scene) {
     scn.shipMs.push(ms);
 }
 
-function ScnHandleKBEvent(scn:Scene, e:KeyboardEvent):boolean {
-    const ship = scn.ship;
-
-    switch(e.key) {
-    case "ArrowLeft":
-        ship.x -= 1;
-        break;
-    case "ArrowRight":
-        ship.x += 1;
-        break;
-    case "ArrowUp":
-    case " ":
-        ScnFireShipMissile(scn);
-        break;
-    default:
-        return false;
+function ScnKbKey(scn:Scene):string {
+    if (scn.kbKeys.length == 0) {
+        return "";
     }
+    const key = scn.kbKeys[scn.kbKeys.length-1];
+    return key;
+}
 
+function ScnHandleKBEvent(scn:Scene, e:KeyboardEvent):boolean {
+    if (e.type == "keydown") {
+        scn.kbKeys.push(e.key);
+    } else if (e.type == "keyup") {
+        scn.kbKeys.pop();
+    }
     return true;
 }
 
