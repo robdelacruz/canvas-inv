@@ -26,20 +26,20 @@ interface Scene {
     invblk: InvBlk,
     ship: Sprite,
     invMs: Sprite[],
-    shipMs: Sprite[],
+    shipMs: (Sprite | null)[],
     bgObjs: Sprite[],
-    kbKey: string,
+    kbKeys: {[key:string]:boolean},
 }
 
 function NewScene(g:Graph):Scene {
-    const invblk = NewInvBlk(3, 4, <Pos>{x:10, y:0});
+    const invblk = NewInvBlk(5, 7, <Pos>{x:10, y:0});
 
     let dx = 5;
     let dy = 5;
     const gRect = GraphRect(g);
     InvBlkAddAction(invblk, "rowadvance",
         function(invblk:InvBlk, msElapsed:number):boolean {
-            if (msElapsed >= 400) {
+            if (msElapsed >= 200) {
                 InvBlkMove(invblk, invblk.pos.x + dx, invblk.pos.y);
                 const [startPos, endPos] = InvBlkBounds(invblk);
                 if (endPos.x >= gRect.w || startPos.x <= 0) {
@@ -58,7 +58,7 @@ function NewScene(g:Graph):Scene {
         invMs: [],
         shipMs: [],
         bgObjs: [],
-        kbKey: "",
+        kbKeys: {},
     };
 
 
@@ -94,8 +94,8 @@ function ScnAddShip(scn:Scene) {
 }
 
 function ScnUpdate(scn:Scene) {
-    const key = ScnKbKey(scn);
-    if (key != "") {
+    const keys = ScnKbKeys(scn);
+    for (const key of keys) {
         switch(key) {
         case "ArrowLeft":
             scn.ship.x -= 1;
@@ -130,7 +130,7 @@ function ScnUpdate(scn:Scene) {
     }
 
     for (const ms of scn.shipMs) {
-        if (ms.Props["remove"] != null) {
+        if (ms == null) {
             continue;
         }
         SprAnimate(ms);
@@ -139,17 +139,20 @@ function ScnUpdate(scn:Scene) {
 
     // Check each ship missile hit on an invader.
 for_shipMs:
-    for (const ms of scn.shipMs) {
+    for (let iMs=0; iMs < scn.shipMs.length; iMs++) {
+        const ms = scn.shipMs[iMs];
+        if (ms == null) {
+            continue;
+        }
         for (let y=0; y < scn.invblk.Rows.length; y++) {
             const invRow = scn.invblk.Rows[y];
             for (let x=0; x < invRow.length; x++) {
                 const inv = invRow[x];
-                if (inv == null || ms.Props["remove"] != null) {
+                if (inv == null) {
                     continue;
                 }
                 if (SprCheckCollision(ms, inv)) {
-                    console.log("Missile hit invader.");
-                    ms.Props["remove"] = "y";
+                    scn.shipMs[iMs] = null;
                     invRow[x] = null;
                     continue for_shipMs;
                 }
@@ -163,7 +166,7 @@ function ScnSweepObjects(scn:Scene) {
     let ncleared = 0;
     let aliveMs = [];
     for (const ms of scn.shipMs) {
-        if (ms.Props["remove"] == null) {
+        if (ms != null) {
             aliveMs.push(ms);
         } else {
             ncleared++;
@@ -191,7 +194,7 @@ function ScnDraw(scn:Scene) {
     }
 
     for (const m of scn.shipMs) {
-        if (m.Props["remove"] != null) {
+        if (m == null) {
             continue;
         }
         GraphDrawSprite(g, m);
@@ -214,6 +217,16 @@ function ScnFireShipMissile(scn:Scene) {
             if (sp.y > 0) {
                 sp.y -= 2;
             }
+
+            // Remove missile from screen
+            if (sp.y <= 0) {
+                for (let i=0; i < scn.shipMs.length; i++) {
+                    if (scn.shipMs[i] == ms) {
+                        scn.shipMs[i] = null;
+                        break;
+                    }
+                }
+            }
             return true;
         }
 
@@ -223,16 +236,16 @@ function ScnFireShipMissile(scn:Scene) {
     scn.shipMs.push(ms);
 }
 
-function ScnKbKey(scn:Scene):string {
-    return scn.kbKey;
+function ScnKbKeys(scn:Scene):string[] {
+    return Object.keys(scn.kbKeys);
 }
 
 function ScnHandleKBEvent(scn:Scene, e:KeyboardEvent):boolean {
     if (e.type == "keydown") {
-        scn.kbKey = e.key;
+        scn.kbKeys[e.key] = true;
         return true;
     } else if (e.type == "keyup") {
-        scn.kbKey = "";
+        delete scn.kbKeys[e.key];
         return true;
     }
     return false;
