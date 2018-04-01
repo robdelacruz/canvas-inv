@@ -48,7 +48,7 @@ function NewGraph(cv:HTMLCanvasElement, wcell:number):Graph {
     return g;
 }
 
-function GraphRect(g:Graph, ):Rect {
+function GraphRect(g:Graph):Rect {
     const cv = g.cv;
     return <Rect>{
         x: 0,

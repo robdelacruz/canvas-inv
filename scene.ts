@@ -15,11 +15,11 @@ ScnHandleKBEvent(e:KeyboardEvent):boolean
 
 */
 
-import {Pos,Frame} from "./common";
+import {Pos,Rect,Frame} from "./common";
 import {Sprite,SprRect,SprAnimate,SprUpdate,SprAddAction,SprCheckCollision} from "./sprite.js";
 import {Graph,GraphRect,GraphClear,GraphDrawSprite} from "./graph.js";
 import {NewInv,NewShip,NewShipMissile} from "./gameobjects.js";
-import {InvBlk,NewInvBlk,InvBlkMove} from "./invblk.js";
+import {InvBlk,NewInvBlk,InvBlkMove,InvBlkBounds,InvBlkAddAction,InvBlkUpdate} from "./invblk.js";
 
 interface Scene {
     g: Graph,
@@ -28,11 +28,28 @@ interface Scene {
     invMs: Sprite[],
     shipMs: Sprite[],
     bgObjs: Sprite[],
-    kbKeys: string[],
+    kbKey: string,
 }
 
 function NewScene(g:Graph):Scene {
-    const invblk = NewInvBlk(5, 7, <Pos>{x:5, y:5});
+    const invblk = NewInvBlk(3, 4, <Pos>{x:10, y:0});
+
+    let dx = 5;
+    let dy = 5;
+    const gRect = GraphRect(g);
+    InvBlkAddAction(invblk, "rowadvance",
+        function(invblk:InvBlk, msElapsed:number):boolean {
+            if (msElapsed >= 400) {
+                InvBlkMove(invblk, invblk.pos.x + dx, invblk.pos.y);
+                const [startPos, endPos] = InvBlkBounds(invblk);
+                if (endPos.x >= gRect.w || startPos.x <= 0) {
+                    dx = -dx;
+                    InvBlkMove(invblk, invblk.pos.x + dx, invblk.pos.y + dy);
+                }
+                return true;
+            }
+            return false;
+        });
 
     const scn = <Scene>{
         g: g,
@@ -41,7 +58,7 @@ function NewScene(g:Graph):Scene {
         invMs: [],
         shipMs: [],
         bgObjs: [],
-        kbKeys: [],
+        kbKey: "",
     };
 
 
@@ -77,9 +94,6 @@ function ScnAddShip(scn:Scene) {
 }
 
 function ScnUpdate(scn:Scene) {
-    const ib = scn.invblk;
-    InvBlkMove(ib, ib.pos.x + 0.5, ib.pos.y + 0.2);
-
     const key = ScnKbKey(scn);
     if (key != "") {
         switch(key) {
@@ -97,6 +111,8 @@ function ScnUpdate(scn:Scene) {
             break;
         }
     }
+
+    InvBlkUpdate(scn.invblk);
 
     for (const invRow of scn.invblk.Rows) {
         for (const inv of invRow) {
@@ -208,20 +224,18 @@ function ScnFireShipMissile(scn:Scene) {
 }
 
 function ScnKbKey(scn:Scene):string {
-    if (scn.kbKeys.length == 0) {
-        return "";
-    }
-    const key = scn.kbKeys[scn.kbKeys.length-1];
-    return key;
+    return scn.kbKey;
 }
 
 function ScnHandleKBEvent(scn:Scene, e:KeyboardEvent):boolean {
     if (e.type == "keydown") {
-        scn.kbKeys.push(e.key);
+        scn.kbKey = e.key;
+        return true;
     } else if (e.type == "keyup") {
-        scn.kbKeys.pop();
+        scn.kbKey = "";
+        return true;
     }
-    return true;
+    return false;
 }
 
 export {
