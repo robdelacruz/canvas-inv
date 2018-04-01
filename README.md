@@ -22,3 +22,6 @@ $ ./b
 
 ![screenshot](https://robdelacruz.github.io/images/canvas_inv_2018-03-26.png "Screenshot")
 
+## Demo
+
+[Demo page](https://robdelacruz.github.io/invdemo/)
