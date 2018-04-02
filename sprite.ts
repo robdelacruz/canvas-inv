@@ -25,12 +25,9 @@ SprCheckCollisionMultiple(spr, sprItems:Sprite[]):boolean
 */
 
 import {Frame, Rect} from "./common";
+import {ActionsTbl,ActionCB,NewActionsTbl,ActionsTblAddAction,ActionsTblUpdate} from "./actionstbl.js";
 
 type FramesMap={[framesID:string]:Frame[]};
-interface ActionCB {
-    (sp:Sprite, msElapsed:number): boolean;
-}
-type ActionsMap={[actionID:string]:ActionCB};
 
 interface Sprite {
     x: number,
@@ -42,8 +39,7 @@ interface Sprite {
     MsPerFrame: number,     // milliseconds per cell frame
     lastAnimateTime: number,  // last animate time
 
-    ActionsTable: ActionsMap,
-    lastActionTime: {[k:string]:number},
+    actionsTbl:ActionsTbl,
 
     Props: {[id:string]:string},
 }
@@ -73,8 +69,7 @@ function NewSprite(framesTable:FramesMap, msPerFrame = 0):Sprite {
     spr.y = 0;
     spr.lastAnimateTime = new Date().getTime();
 
-    spr.ActionsTable = {};
-    spr.lastActionTime = {};
+    spr.actionsTbl = NewActionsTbl();
 
     spr.Props = {};
 
@@ -136,27 +131,11 @@ function SprAnimate(spr:Sprite) {
 }
 
 function SprUpdate(spr:Sprite) {
-    const msNow = new Date().getTime();
-
-    for (const actionID in spr.ActionsTable) {
-        let msLastTime = spr.lastActionTime[actionID];
-        if (msLastTime == null) {
-            msLastTime = 0;
-        }
-
-        const msElapsed = msNow - msLastTime;
-        const actionFn = spr.ActionsTable[actionID];
-        if (actionFn(spr, msElapsed) == true) {
-            spr.lastActionTime[actionID] = msNow;
-        }
-    }
+    ActionsTblUpdate(spr.actionsTbl);
 }
 
 function SprAddAction(spr:Sprite, actionID:string, fn:ActionCB) {
-    spr.ActionsTable[actionID] = fn;
-
-    const msNow = new Date().getTime();
-    spr.lastActionTime[actionID] = msNow;
+    ActionsTblAddAction(spr.actionsTbl, actionID, fn);
 }
 
 function SprCheckCollision(spr:Sprite, spr2:Sprite):boolean {

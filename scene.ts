@@ -20,6 +20,7 @@ import {Sprite,SprRect,SprAnimate,SprUpdate,SprAddAction,SprCheckCollision} from
 import {Graph,GraphRect,GraphClear,GraphDrawSprite} from "./graph.js";
 import {NewInv,NewShip,NewShipMissile} from "./gameobjects.js";
 import {InvBlk,NewInvBlk,InvBlkMove,InvBlkBounds,InvBlkAddAction,InvBlkUpdate} from "./invblk.js";
+import {ActionCB} from "./actionstbl.js";
 
 interface Scene {
     g: Graph,
@@ -38,7 +39,7 @@ function NewScene(g:Graph):Scene {
     let dy = 5;
     const gRect = GraphRect(g);
     InvBlkAddAction(invblk, "rowadvance",
-        function(invblk:InvBlk, msElapsed:number):boolean {
+        function(msElapsed:number):boolean {
             if (msElapsed >= 200) {
                 InvBlkMove(invblk, invblk.pos.x + dx, invblk.pos.y);
                 const [startPos, endPos] = InvBlkBounds(invblk);
@@ -212,14 +213,14 @@ function ScnFireShipMissile(scn:Scene) {
     const yMissile = shipRect.y - missileRect.h;
     const ms = NewShipMissile(xMissile,yMissile);
 
-    SprAddAction(ms, "fire", function(sp:Sprite, msElapsed:number):boolean {
+    SprAddAction(ms, "fire", function(msElapsed:number):boolean {
         if (msElapsed >= 5) {
-            if (sp.y > 0) {
-                sp.y -= 2;
+            if (ms.y > 0) {
+                ms.y -= 2;
             }
 
             // Remove missile from screen
-            if (sp.y <= 0) {
+            if (ms.y <= 0) {
                 for (let i=0; i < scn.shipMs.length; i++) {
                     if (scn.shipMs[i] == ms) {
                         scn.shipMs[i] = null;

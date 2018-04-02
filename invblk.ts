@@ -1,20 +1,15 @@
 import {Pos,Rect} from "./common";
 import {Sprite,NewSprite,SprRect} from "./sprite.js";
 import {NewInv} from "./gameobjects.js";
-
-interface ActionCB {
-    (invblk:InvBlk, msElapsed:number): boolean;
-}
-type ActionsMap={[actionID:string]:ActionCB};
+import {ActionsTbl,ActionCB,NewActionsTbl,ActionsTblAddAction,ActionsTblUpdate} from "./actionstbl.js";
 
 interface InvBlk {
     pos: Pos,
 
     nInv: number,
-    Rows: ((Sprite | null)[])[];
+    Rows: ((Sprite | null)[])[],
 
-    ActionsTable: ActionsMap,
-    lastActionTime: {[k:string]:number},
+    actionsTbl:ActionsTbl,
 
     // helper props
     wInv: number,
@@ -43,8 +38,7 @@ function NewInvBlk(nRows:number, nCols:number, pos:Pos):InvBlk {
     invblk.xInvSpace = xInvSpace,
     invblk.yInvSpace = yInvSpace,
 
-    invblk.ActionsTable = {};
-    invblk.lastActionTime = {};
+    invblk.actionsTbl = NewActionsTbl();
 
     let rows = [];
     let yInv = pos.y;
@@ -67,27 +61,11 @@ function NewInvBlk(nRows:number, nCols:number, pos:Pos):InvBlk {
 }
 
 function InvBlkAddAction(invblk:InvBlk, actionID:string, fn:ActionCB) {
-    invblk.ActionsTable[actionID] = fn;
-
-    const msNow = new Date().getTime();
-    invblk.lastActionTime[actionID] = msNow;
+    ActionsTblAddAction(invblk.actionsTbl, actionID, fn);
 }
 
 function InvBlkUpdate(invblk:InvBlk) {
-    const msNow = new Date().getTime();
-
-    for (const actionID in invblk.ActionsTable) {
-        let msLastTime = invblk.lastActionTime[actionID];
-        if (msLastTime == null) {
-            msLastTime = 0;
-        }
-
-        const msElapsed = msNow - msLastTime;
-        const actionFn = invblk.ActionsTable[actionID];
-        if (actionFn(invblk, msElapsed) == true) {
-            invblk.lastActionTime[actionID] = msNow;
-        }
-    }
+    ActionsTblUpdate(invblk.actionsTbl);
 }
 
 function InvBlkMove(invblk:InvBlk, x:number, y:number) {
