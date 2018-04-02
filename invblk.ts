@@ -9,8 +9,6 @@ interface InvBlk {
     nInv: number,
     Rows: ((Sprite | null)[])[],
 
-    actionsTbl:ActionsTbl,
-
     // helper props
     wInv: number,
     hInv: number,
@@ -32,13 +30,11 @@ function NewInvBlk(nRows:number, nCols:number, pos:Pos):InvBlk {
 
     let invblk = <InvBlk>{};
     invblk.pos = pos;
-    invblk.nInv = nRows * nCols,
-    invblk.wInv = wInv,
-    invblk.hInv = hInv,
-    invblk.xInvSpace = xInvSpace,
-    invblk.yInvSpace = yInvSpace,
-
-    invblk.actionsTbl = NewActionsTbl();
+    invblk.nInv = nRows * nCols;
+    invblk.wInv = wInv;
+    invblk.hInv = hInv;
+    invblk.xInvSpace = xInvSpace;
+    invblk.yInvSpace = yInvSpace;
 
     let rows = [];
     let yInv = pos.y;
@@ -58,14 +54,6 @@ function NewInvBlk(nRows:number, nCols:number, pos:Pos):InvBlk {
     invblk.Rows = rows;
 
     return invblk;
-}
-
-function InvBlkAddAction(invblk:InvBlk, actionID:string, fn:ActionCB) {
-    ActionsTblAddAction(invblk.actionsTbl, actionID, fn);
-}
-
-function InvBlkUpdate(invblk:InvBlk) {
-    ActionsTblUpdate(invblk.actionsTbl);
 }
 
 function InvBlkMove(invblk:InvBlk, x:number, y:number) {
@@ -121,6 +109,29 @@ function bottommostRow(rows:any[][]):number {
     return -1;
 }
 
+// Return all invs that have surface exposure from the bottom.
+// (In other words, invs that aren't blocked by other invs down.)
+function bottomSurface(rows:any[][]):any[] {
+    let exposed = [];
+    const rowLen = rows[0].length;
+
+    for (let x=0; x < rowLen; x++) {
+        for (let y=rows.length-1; y >= 0; y--) {
+            const item = rows[y][x];
+            if (item != null) {
+                exposed.push(item);
+                break;
+            }
+        }
+    }
+
+    return exposed;
+}
+
+function InvBlkExposed(invblk:InvBlk): Sprite[] {
+    return bottomSurface(invblk.Rows);
+}
+
 // Return [top left, lower right] boundary positions.
 function InvBlkBounds(invblk:InvBlk): Pos[] {
     const yTop = topmostRow(invblk.Rows);
@@ -164,9 +175,8 @@ function InvBlkBounds(invblk:InvBlk): Pos[] {
 export {
     InvBlk,
     NewInvBlk,
-    InvBlkUpdate,
-    InvBlkAddAction,
     InvBlkMove,
+    InvBlkExposed,
     InvBlkBounds,
 };
 
