@@ -26,6 +26,8 @@ const Palette:string[] = [
     "#0FF",     // 4
     "#BBB",     // 5
     "#DDD",     // 6
+    "#222",     // 7
+    "#555",     // 8
 ];
 
 const Fonts:string[] = [

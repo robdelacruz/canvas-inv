@@ -93,6 +93,50 @@ const invMissileFrames = <Frame[]>[
     "0600",
 ]];
 
+const invDebrisFrames = <Frame[]>[
+[
+    "0000000000",
+    "0000000000",
+    "0000000000",
+    "0000870000",
+    "0007777000",
+    "0000787000",
+    "0000000000",
+    "0000000000",
+],[
+    "0000000000",
+    "0000000000",
+    "0000000000",
+    "0000780000",
+    "0008777000",
+    "0000778000",
+    "0000000000",
+    "0000000000",
+]];
+const shipDebrisFrames = <Frame[]>[
+[
+    "0000000",
+    "0077000",
+    "0777700",
+    "7777770",
+],[
+    "0000000",
+    "0000000",
+    "0077000",
+    "0777700",
+]];
+const msDebrisFrames = <Frame[]>[
+[
+    "7007",
+    "0707",
+    "0700",
+    "0007",
+],[
+    "0007",
+    "7070",
+    "7000",
+    "0077",
+]];
 
 const invFramesTable = {
     "default": invAFrames,
@@ -107,6 +151,15 @@ const shipMissileFramesTable = {
 };
 const invMissileFramesTable = {
     "default": invMissileFrames,
+};
+const invDebrisFramesTable = {
+    "default": invDebrisFrames,
+};
+const shipDebrisFramesTable = {
+    "default": shipDebrisFrames,
+};
+const msDebrisFramesTable = {
+    "default": msDebrisFrames,
 };
 
 function NewInv(invType:string, x:number, y:number):Sprite {
@@ -157,10 +210,32 @@ function fnInvLateralMovement(inv:Sprite, msElapsed:number):boolean {
     return false;
 }
 
+function NewInvDebris(x:number, y:number):Sprite {
+    const spr = NewSprite(invDebrisFramesTable, 200);
+    spr.x = x;
+    spr.y = y;
+    return spr;
+}
+function NewShipDebris(x:number, y:number):Sprite {
+    const spr = NewSprite(shipDebrisFramesTable, 200);
+    spr.x = x;
+    spr.y = y;
+    return spr;
+}
+function NewMissileDebris(x:number, y:number):Sprite {
+    const spr = NewSprite(msDebrisFramesTable, 200);
+    spr.x = x;
+    spr.y = y;
+    return spr;
+}
+
 export {
     NewInv,
     NewShip,
     NewShipMissile,
     NewInvMissile,
+    NewInvDebris,
+    NewShipDebris,
+    NewMissileDebris,
 };
 

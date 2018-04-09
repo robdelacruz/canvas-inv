@@ -17,8 +17,8 @@ ScnHandleKBEvent(e:KeyboardEvent):boolean
 
 import {Pos,Rect,Frame} from "./common";
 import {Sprite,SprRect,SprAnimate,SprUpdate,SprAddAction,SprCheckCollision} from "./sprite.js";
-import {Graph,GraphRect,GraphClear,GraphDrawSprite} from "./graph.js";
-import {NewInv,NewShip,NewShipMissile,NewInvMissile} from "./gameobjects.js";
+import {Graph,GraphRect,GraphClear,GraphDrawSprite,GraphDrawText} from "./graph.js";
+import {NewInv,NewShip,NewShipMissile,NewInvMissile,NewInvDebris,NewShipDebris,NewMissileDebris} from "./gameobjects.js";
 import {InvBlk,NewInvBlk,InvBlkMove,InvBlkBounds,InvBlkExposed} from "./invblk.js";
 import {ActionsTbl,ActionCB,NewActionsTbl,ActionsTblAddAction,ActionsTblUpdate} from "./actionstbl.js";
 
@@ -169,6 +169,21 @@ function ScnUpdate(scn:Scene) {
         SprUpdate(ms);
     }
 
+    for (const bg of scn.bgObjs) {
+        if (bg == null) {
+            continue;
+        }
+        SprAnimate(bg);
+        SprUpdate(bg);
+    }
+
+    scanInvHit(scn);
+    scanShipHit(scn);
+    scanMsHit(scn);
+
+}
+
+function scanInvHit(scn:Scene) {
     // Check each ship missile hit on an invader.
 for_shipMs:
     for (let iMs=0; iMs < scn.shipMs.length; iMs++) {
@@ -183,14 +198,41 @@ for_shipMs:
                 if (inv == null) {
                     continue;
                 }
+
+                // Collision: remove missile and inv.
                 if (SprCheckCollision(ms, inv)) {
                     scn.shipMs[iMs] = null;
                     invRow[x] = null;
+
+                    invHit(scn, inv);
+
                     continue for_shipMs;
                 }
             }
         }
     }
+}
+function scanShipHit(scn:Scene) {
+}
+function scanMsHit(scn:Scene) {
+}
+
+function invHit(scn:Scene, inv:Sprite) {
+    // Add new 'invader debris' sprite to background objects
+    const debris = NewInvDebris(inv.x, inv.y);
+    scn.bgObjs.push(debris);
+}
+
+function shipHit(scn:Scene) {
+    // Add new 'ship debris' sprite to background objects
+    const debris = NewShipDebris(scn.ship.x, scn.ship.y);
+    scn.bgObjs.push(debris);
+}
+
+function missileCollide(scn:Scene, shipMs:Sprite, invMs:Sprite) {
+    // Add new 'missile debris' sprite to background objects
+    const debris = NewMissileDebris(shipMs.x, shipMs.y);
+    scn.bgObjs.push(debris);
 }
 
 function ScnSweepObjects(scn:Scene) {
@@ -216,6 +258,13 @@ function ScnDraw(scn:Scene) {
     const g = scn.g;
 
     GraphClear(g, 0);
+
+    for (const bg of scn.bgObjs) {
+        if (bg == null) {
+            continue;
+        }
+        GraphDrawSprite(g, bg);
+    }
 
     if (scn.ship != null) {
         GraphDrawSprite(g, scn.ship);
@@ -243,6 +292,8 @@ function ScnDraw(scn:Scene) {
         }
         GraphDrawSprite(g, m);
     }
+
+//    GraphDrawText(g, 5, 80, `Ships:3  Invaders:20  Score:12`, 0, 5);
 }
 
 function ScnFireShipMissile(scn:Scene) {
